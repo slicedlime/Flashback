@@ -1938,6 +1938,9 @@ public class TimelineWindow {
             if (ImGui.beginPopup("##CreateKeyframe")) {
                 if (createKeyframeWithPopup != null) {
                     hasOpenPopup = true;
+                    if (!ImGui.isAnyItemActive()) {
+                        ImGui.setKeyboardFocusHere();
+                    }
                     Keyframe keyframe = createKeyframeWithPopup.render();
                     if (keyframe != null) {
                         upgradeToSceneWrite();
