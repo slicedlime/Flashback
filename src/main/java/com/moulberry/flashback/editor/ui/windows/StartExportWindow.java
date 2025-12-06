@@ -77,21 +77,7 @@ public class StartExportWindow {
                 }
             }
 
-            FlashbackConfigV1 config = Flashback.getConfig();
-            config.forceDefaultExportSettings.apply(config.internalExport);
-
-            if (config.internalExport.resolution == null || config.internalExport.resolution.length != 2) {
-                config.internalExport.resolution = new int[]{1920, 1080};
-            }
-            if (config.internalExport.framerate == null || config.internalExport.framerate.length != 1) {
-                config.internalExport.framerate = new float[]{60};
-            }
-            if (config.internalExport.selectedVideoEncoder == null || config.internalExport.selectedVideoEncoder.length != 1) {
-                config.internalExport.selectedVideoEncoder = new int[]{0};
-            }
-            if (config.internalExport.audioCodec == null) {
-                config.internalExport.audioCodec = AudioCodec.AAC;
-            }
+            FlashbackConfigV1 config = getDefaultConfig();
 
             ImGui.openPopup("###StartExport");
 
@@ -263,6 +249,25 @@ public class StartExportWindow {
         }
     }
 
+    public static @NotNull FlashbackConfigV1 getDefaultConfig() {
+        FlashbackConfigV1 config = Flashback.getConfig();
+        config.forceDefaultExportSettings.apply(config.internalExport);
+
+        if (config.internalExport.resolution == null || config.internalExport.resolution.length != 2) {
+            config.internalExport.resolution = new int[]{1920, 1080};
+        }
+        if (config.internalExport.framerate == null || config.internalExport.framerate.length != 1) {
+            config.internalExport.framerate = new float[]{60};
+        }
+        if (config.internalExport.selectedVideoEncoder == null || config.internalExport.selectedVideoEncoder.length != 1) {
+            config.internalExport.selectedVideoEncoder = new int[]{0};
+        }
+        if (config.internalExport.audioCodec == null) {
+            config.internalExport.audioCodec = AudioCodec.AAC;
+        }
+        return config;
+    }
+
     private static void renderVideoOptions(EditorState editorState, FlashbackConfigV1 config) {
         if (editorState != null && !editorState.replayVisuals.renderSky) {
             if (ImGui.checkbox(I18n.get("flashback.transparent_sky"), config.internalExport.transparentBackground)) {
@@ -272,18 +277,7 @@ public class StartExportWindow {
             config.internalExport.transparentBackground = false;
         }
 
-        VideoContainer[] containers;
-        if (config.internalExport.transparentBackground) {
-            if (supportedContainersWithTransparency == null) {
-                supportedContainersWithTransparency = VideoContainer.findSupportedContainers(true);
-            }
-            containers = supportedContainersWithTransparency;
-        } else {
-            if (supportedContainers == null) {
-                supportedContainers = VideoContainer.findSupportedContainers(false);
-            }
-            containers = supportedContainers;
-        }
+        VideoContainer[] containers = getSupportedContainers(config);
 
         if (containers.length == 0) {
             ImGui.textUnformatted(I18n.get("flashback.no_supported_containers_found"));
@@ -343,7 +337,23 @@ public class StartExportWindow {
         }
     }
 
-    private static CompletableFuture<ExportSettings> createExportSettings(@Nullable String name, FlashbackConfigV1 config) {
+    public static VideoContainer @NotNull [] getSupportedContainers(final FlashbackConfigV1 config) {
+        VideoContainer[] containers;
+        if (config.internalExport.transparentBackground) {
+            if (supportedContainersWithTransparency == null) {
+                supportedContainersWithTransparency = VideoContainer.findSupportedContainers(true);
+            }
+            containers = supportedContainersWithTransparency;
+        } else {
+            if (supportedContainers == null) {
+                supportedContainers = VideoContainer.findSupportedContainers(false);
+            }
+            containers = supportedContainers;
+        }
+        return containers;
+    }
+
+    public static CompletableFuture<ExportSettings> createExportSettings(@Nullable String name, FlashbackConfigV1 config) {
         int numBitrate;
         if (config.internalExport.useMaximumBitrate) {
             numBitrate = 0;
@@ -353,76 +363,7 @@ public class StartExportWindow {
 
         String defaultName = getDefaultFilename(name, config.internalExport.container.extension(), config);
 
-        Function<String, ExportSettings> callback = pathStr -> {
-            if (pathStr != null) {
-                EditorState editorState = EditorStateManager.getCurrent();
-                if (editorState == null) {
-                    return null;
-                }
-
-                int start, end;
-                if (startEndTick[0] >= 0 && startEndTick[1] >= 0) {
-                    start = Math.max(0, startEndTick[0]);
-                    end = Math.max(start, startEndTick[1]);
-                } else {
-                    var firstAndLastInTracks = editorState.getFirstAndLastTicksInTracks();
-                    start = firstAndLastInTracks.start();
-                    end = firstAndLastInTracks.end();
-
-                    if (start < 0) {
-                        start = 0;
-                    }
-                    if (end < 0 || start == end) {
-                        ReplayServer replayServer = Flashback.getReplayServer();
-                        if (replayServer != null) {
-                            end = replayServer.getTotalReplayTicks();
-                        } else {
-                            end = start+100;
-                        }
-                    }
-                }
-
-                ReplayServer replayServer = Flashback.getReplayServer();
-                if (replayServer != null) {
-                    int totalTicks = replayServer.getTotalReplayTicks();
-                    start = Math.min(start, totalTicks);
-                    end = Math.min(end, totalTicks);
-                }
-
-                LocalPlayer player = Minecraft.getInstance().player;
-                if (player == null) {
-                    return null;
-                }
-
-                boolean transparent = config.internalExport.transparentBackground && !editorState.replayVisuals.renderSky;
-                String encoder = config.internalExport.videoCodec.getEncoders()[config.internalExport.selectedVideoEncoder[0]];
-
-                VideoCodec useVideoCodec = config.internalExport.videoCodec;
-                AudioCodec useAudioCodec = config.internalExport.audioCodec;
-                boolean shouldRecordAudio = config.internalExport.recordAudio;
-
-                if (config.internalExport.container == VideoContainer.PNG_SEQUENCE) {
-                    useVideoCodec = null;
-                    encoder = null;
-                    shouldRecordAudio = false;
-                }
-
-                if (!shouldRecordAudio) {
-                    useAudioCodec = null;
-                }
-
-                Path path = Path.of(pathStr);
-                config.internalExport.defaultExportPath = path.getParent().toString();
-                return new ExportSettings(name, editorState.copy(),
-                    player.position(), player.getYRot(), player.getXRot(),
-                    config.internalExport.resolution[0], config.internalExport.resolution[1], start, end,
-                    Math.max(1, config.internalExport.framerate[0]), config.internalExport.resetRng, config.internalExport.container, useVideoCodec, encoder, numBitrate, transparent, config.internalExport.ssaa, config.internalExport.noGui,
-                    shouldRecordAudio, config.internalExport.stereoAudio, useAudioCodec,
-                    path, ImGuiHelper.getString(pngSequenceFormat));
-            }
-
-            return null;
-        };
+        Function<String, ExportSettings> callback = pathStr -> getExportSettings(name, config, pathStr, numBitrate);
 
         String defaultExportPathString = config.internalExport.defaultExportPath;
         if (config.internalExport.container == VideoContainer.PNG_SEQUENCE) {
@@ -432,6 +373,77 @@ public class StartExportWindow {
                 config.internalExport.container.extension(), config.internalExport.container.extension()).thenApply(callback);
         }
 
+    }
+
+    public static @Nullable ExportSettings getExportSettings(final @Nullable String name, final FlashbackConfigV1 config, final String pathStr, final int numBitrate) {
+        if (pathStr != null) {
+            EditorState editorState = EditorStateManager.getCurrent();
+            if (editorState == null) {
+                return null;
+            }
+
+            int start, end;
+            if (startEndTick[0] >= 0 && startEndTick[1] >= 0) {
+                start = Math.max(0, startEndTick[0]);
+                end = Math.max(start, startEndTick[1]);
+            } else {
+                var firstAndLastInTracks = editorState.getFirstAndLastTicksInTracks();
+                start = firstAndLastInTracks.start();
+                end = firstAndLastInTracks.end();
+
+                if (start < 0) {
+                    start = 0;
+                }
+                if (end < 0 || start == end) {
+                    ReplayServer replayServer = Flashback.getReplayServer();
+                    if (replayServer != null) {
+                        end = replayServer.getTotalReplayTicks();
+                    } else {
+                        end = start+100;
+                    }
+                }
+            }
+
+            ReplayServer replayServer = Flashback.getReplayServer();
+            if (replayServer != null) {
+                int totalTicks = replayServer.getTotalReplayTicks();
+                start = Math.min(start, totalTicks);
+                end = Math.min(end, totalTicks);
+            }
+
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player == null) {
+                return null;
+            }
+
+            boolean transparent = config.internalExport.transparentBackground && !editorState.replayVisuals.renderSky;
+            String encoder = config.internalExport.videoCodec.getEncoders()[config.internalExport.selectedVideoEncoder[0]];
+
+            VideoCodec useVideoCodec = config.internalExport.videoCodec;
+            AudioCodec useAudioCodec = config.internalExport.audioCodec;
+            boolean shouldRecordAudio = config.internalExport.recordAudio;
+
+            if (config.internalExport.container == VideoContainer.PNG_SEQUENCE) {
+                useVideoCodec = null;
+                encoder = null;
+                shouldRecordAudio = false;
+            }
+
+            if (!shouldRecordAudio) {
+                useAudioCodec = null;
+            }
+
+            Path path = Path.of(pathStr);
+            config.internalExport.defaultExportPath = path.getParent().toString();
+            return new ExportSettings(name, editorState.copy(),
+                player.position(), player.getYRot(), player.getXRot(),
+                config.internalExport.resolution[0], config.internalExport.resolution[1], start, end,
+                Math.max(1, config.internalExport.framerate[0]), config.internalExport.resetRng, config.internalExport.container, useVideoCodec, encoder, numBitrate, transparent, config.internalExport.ssaa, config.internalExport.noGui,
+                shouldRecordAudio, config.internalExport.stereoAudio, useAudioCodec,
+                path, ImGuiHelper.getString(pngSequenceFormat));
+        }
+
+        return null;
     }
 
     public static @NotNull String getDefaultFilename(@Nullable String name, String extension, FlashbackConfigV1 config) {
@@ -464,7 +476,7 @@ public class StartExportWindow {
         return defaultName;
     }
 
-    private static int stringToBitrate(String string) {
+    public static int stringToBitrate(String string) {
         int number = 0;
         int modifier = 1;
         int total = 0;

@@ -196,6 +196,7 @@
   "flashback.menu.file": "File",
   "flashback.menu.file.export_video": "Export Video",
   "flashback.menu.file.export_queue": "Export Queue (%d)",
+  "flashback.menu.file.export_default": "Add to Queue with Defaults (%d)",
   "flashback.open_recent_replay": "Open Recent",
   "flashback.exit_replay": "Exit Replay",
   "flashback.preferences": "Preferences",
