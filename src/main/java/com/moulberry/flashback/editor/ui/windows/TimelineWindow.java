@@ -2161,20 +2161,24 @@ public class TimelineWindow {
                 }
                 if (ImGui.selectable(type.name())) {
                     upgradeToSceneWrite();
-                    List<EditorSceneHistoryAction> undo = new ArrayList<>();
-                    List<EditorSceneHistoryAction> redo = new ArrayList<>();
-
-                    int index = editorScene.keyframeTracks.size();
-                    undo.add(new EditorSceneHistoryAction.RemoveTrack(type, index));
-                    redo.add(new EditorSceneHistoryAction.AddTrack(type, index));
-
-                    editorScene.push(new EditorSceneHistoryEntry(undo, redo, I18n.get("flashback.create_named_track", type.name())));
-                    editorState.markDirty();
+                    createTrack(type);
                     ImGui.closeCurrentPopup();
                 }
             }
             ImGui.endPopup();
         }
+    }
+
+    private static void createTrack(final KeyframeType<?> type) {
+        List<EditorSceneHistoryAction> undo = new ArrayList<>();
+        List<EditorSceneHistoryAction> redo = new ArrayList<>();
+
+        int index = editorScene.keyframeTracks.size();
+        undo.add(new EditorSceneHistoryAction.RemoveTrack(type, index));
+        redo.add(new EditorSceneHistoryAction.AddTrack(type, index));
+
+        editorScene.push(new EditorSceneHistoryEntry(undo, redo, I18n.get("flashback.create_named_track", type.name())));
+        editorState.markDirty();
     }
 
     private static void createNewKeyframe(int trackIndex, int tick, KeyframeType<?> keyframeType, KeyframeTrack keyframeTrack) {
