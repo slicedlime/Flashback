@@ -87,6 +87,7 @@ public class TimelineWindow {
     private static Vector2f dragSelectOrigin = null;
 
     private static KeyframeType.KeyframeCreatePopup<?> createKeyframeWithPopup = null;
+    private static int createKeyframePopupOnTrack = -1;
     private static int createKeyframeWithPopupTick = 0;
     private static ImString sceneNameString = null;
     private static boolean copyRelativeToPosition = false;
@@ -800,6 +801,12 @@ public class TimelineWindow {
             editorScene.redo(ReplayUI::setInfoOverlayShort);
             editorState.markDirty();
         }
+        if (ImGui.isKeyPressed(GLFW.GLFW_KEY_PERIOD, false)) {
+            createKeyFrame(cursorTicks, CameraKeyframeType.INSTANCE);
+        }
+        if (ImGui.isKeyPressed(GLFW.GLFW_KEY_L, false)) {
+            createKeyFrame(cursorTicks, TimelapseKeyframeType.INSTANCE);
+        }
 
         if (pressedIn || pressedOut) {
             int start = -1;
@@ -859,6 +866,19 @@ public class TimelineWindow {
                     }
                 }
             } catch (Exception ignored) {}
+        }
+    }
+
+    private static void createKeyFrame(final int cursorTicks, final KeyframeType<?> type) {
+        upgradeToSceneWrite();
+        if (editorScene.keyframeTracks.stream().noneMatch(track -> track.keyframeType == type)) {
+            createTrack(type);
+        }
+        for (int i = 0; i < editorScene.keyframeTracks.size(); i++) {
+            final KeyframeTrack track = editorScene.keyframeTracks.get(i);
+            if (track.keyframeType == type) {
+                createNewKeyframe(i, cursorTicks, type, track, true);
+            }
         }
     }
 
@@ -1907,6 +1927,10 @@ public class TimelineWindow {
                         Minecraft.getInstance().getConnection().sendCommand("spectate");
                     }
                 }
+                if (createKeyframePopupOnTrack == trackIndex) {
+                    createKeyframePopup(cursorTicks, keyframeType);
+                    createKeyframePopupOnTrack = -1;
+                }
                 drawList.addText(buttonX - 2, buttonY, -1, "\ue148");
                 ImGuiHelper.tooltip(I18n.get("flashback.add_keyframe"));
             }
@@ -2182,6 +2206,10 @@ public class TimelineWindow {
     }
 
     private static void createNewKeyframe(int trackIndex, int tick, KeyframeType<?> keyframeType, KeyframeTrack keyframeTrack) {
+        createNewKeyframe(trackIndex, tick, keyframeType, keyframeTrack, false);
+    }
+
+    private static void createNewKeyframe(int trackIndex, int tick, KeyframeType<?> keyframeType, KeyframeTrack keyframeTrack, boolean deferPopups) {
         if (!keyframeType.canBeCreatedNormally()) {
             return;
         }
@@ -2197,12 +2225,20 @@ public class TimelineWindow {
                 editorScene.setKeyframe(trackIndex, tick, new TimelapseKeyframe(0));
                 editorState.markDirty();
             } else {
-                createKeyframeWithPopup = keyframeType.createPopup();
-                if (createKeyframeWithPopup != null) {
-                    ImGui.openPopup("##CreateKeyframe");
-                    createKeyframeWithPopupTick = tick;
+                if (deferPopups) {
+                    createKeyframePopupOnTrack = trackIndex;
+                } else {
+                    createKeyframePopup(tick, keyframeType);
                 }
             }
+        }
+    }
+
+    private static void createKeyframePopup(final int tick, final KeyframeType<?> keyframeType) {
+        createKeyframeWithPopup = keyframeType.createPopup();
+        if (createKeyframeWithPopup != null) {
+            ImGui.openPopup("##CreateKeyframe");
+            createKeyframeWithPopupTick = tick;
         }
     }
 
