@@ -1,6 +1,7 @@
 package com.moulberry.flashback;
 
 import com.moulberry.flashback.playback.ReplayServer;
+import com.moulberry.flashback.state.EditorState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -221,15 +222,21 @@ public class Utils {
         String time = dateTime.toLocalTime().toString();
 
         String replay = "unknown";
+        String scene = "Scene";
         ReplayServer replayServer = Flashback.getReplayServer();
         if (replayServer != null) {
             replay = replayServer.getMetadata().name;
+            final EditorState editorState = replayServer.getEditorState();
+            final long stamp = editorState.acquireRead();
+            scene = editorState.getCurrentScene(stamp).name;
+            editorState.release(stamp);
         }
 
         return template
             .replace("%date%", date)
             .replace("%time%", time)
             .replace("%replay%", replay)
+            .replace("%scene%", scene)
             .replace("%seq%", ""+exportSequenceCount);
     }
 
