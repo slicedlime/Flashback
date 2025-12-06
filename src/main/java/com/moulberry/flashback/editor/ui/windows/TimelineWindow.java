@@ -2073,6 +2073,9 @@ public class TimelineWindow {
             sceneNameString = ImGuiHelper.createResizableImString(I18n.get("flashback.default_scene_name", scenes.size() + 1));
         }
         if (ImGui.beginPopup("##NewScene")) {
+            if (!ImGui.isAnyItemActive()) {
+                ImGui.setKeyboardFocusHere();
+            }
             ImGui.inputText(I18n.get("flashback.name"), sceneNameString);
 
             if (ImGui.button(I18n.get("flashback.create"))) {
@@ -2098,6 +2101,9 @@ public class TimelineWindow {
             sceneNameString = ImGuiHelper.createResizableImString(editorScene.name);
         }
         if (ImGui.beginPopup("##RenameScene")) {
+            if (!ImGui.isAnyItemActive()) {
+                ImGui.setKeyboardFocusHere();
+            }
             ImGui.inputText(I18n.get("flashback.name"), sceneNameString);
 
             if (ImGui.button(I18n.get("flashback.rename"))) {
