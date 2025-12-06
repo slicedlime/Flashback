@@ -619,9 +619,7 @@ public class CustomImGuiImplGlfw {
                     Minecraft.getInstance().options.keyLeft.matches(new KeyEvent(key, scancode, 0)) ||
                     Minecraft.getInstance().options.keyDown.matches(new KeyEvent(key, scancode, 0)) ||
                     Minecraft.getInstance().options.keyRight.matches(new KeyEvent(key, scancode, 0)) ||
-                    Minecraft.getInstance().options.keyJump.matches(new KeyEvent(key, scancode, 0)) ||
-                    Minecraft.getInstance().options.keyChat.matches(new KeyEvent(key, scancode, 0)) ||
-                    Minecraft.getInstance().options.keyCommand.matches(new KeyEvent(key, scancode, 0))) {
+                    Minecraft.getInstance().options.keyJump.matches(new KeyEvent(key, scancode, 0))) {
                 ReplayUI.focusMainWindowCounter = 5;
                 passToMinecraft = true;
             }
