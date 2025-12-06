@@ -9,6 +9,7 @@ import com.moulberry.flashback.keyframe.change.KeyframeChangeTickrate;
 import com.moulberry.flashback.keyframe.handler.KeyframeHandler;
 import com.moulberry.flashback.keyframe.impl.TimelapseKeyframe;
 import imgui.flashback.ImGui;
+import imgui.flashback.flag.ImGuiInputTextFlags;
 import imgui.flashback.type.ImString;
 import net.minecraft.client.resources.language.I18n;
 import org.jetbrains.annotations.Nullable;
@@ -66,8 +67,8 @@ public class TimelapseKeyframeType implements KeyframeType<TimelapseKeyframe> {
         timelapseKeyframeInput.inputData.allowedChars = "0123456789tsmh.";
 
         return () -> {
-            ImGui.inputText(I18n.get("flashback.time"), timelapseKeyframeInput);
-            if (ImGui.button(I18n.get("flashback.add"))) {
+            final boolean enter = ImGui.inputText(I18n.get("flashback.time"), timelapseKeyframeInput, ImGuiInputTextFlags.EnterReturnsTrue);
+            if (enter || ImGui.button(I18n.get("flashback.add"))) {
                 return new TimelapseKeyframe(Utils.stringToTime(ImGuiHelper.getString(timelapseKeyframeInput)));
             }
             ImGui.sameLine();

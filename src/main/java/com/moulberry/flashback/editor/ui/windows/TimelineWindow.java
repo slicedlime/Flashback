@@ -2104,9 +2104,8 @@ public class TimelineWindow {
             if (!ImGui.isAnyItemActive()) {
                 ImGui.setKeyboardFocusHere();
             }
-            ImGui.inputText(I18n.get("flashback.name"), sceneNameString);
-
-            if (ImGui.button(I18n.get("flashback.create"))) {
+            final boolean enter = ImGui.inputText(I18n.get("flashback.name"), sceneNameString, ImGuiInputTextFlags.EnterReturnsTrue);
+            if (enter || ImGui.button(I18n.get("flashback.create"))) {
                 String sceneName = ImGuiHelper.getString(sceneNameString).trim();
                 if (!sceneName.isEmpty()) {
                     upgradeToSceneWrite();
@@ -2132,9 +2131,8 @@ public class TimelineWindow {
             if (!ImGui.isAnyItemActive()) {
                 ImGui.setKeyboardFocusHere();
             }
-            ImGui.inputText(I18n.get("flashback.name"), sceneNameString);
-
-            if (ImGui.button(I18n.get("flashback.rename"))) {
+            final boolean enter = ImGui.inputText(I18n.get("flashback.name"), sceneNameString, ImGuiInputTextFlags.EnterReturnsTrue);
+            if (enter || ImGui.button(I18n.get("flashback.rename"))) {
                 String sceneName = ImGuiHelper.getString(sceneNameString).trim();
                 if (!sceneName.isEmpty()) {
                     upgradeToSceneWrite();
