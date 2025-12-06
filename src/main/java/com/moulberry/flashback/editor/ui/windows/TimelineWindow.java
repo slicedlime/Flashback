@@ -2055,7 +2055,8 @@ public class TimelineWindow {
 
         ImGui.sameLine();
 
-        boolean openNewScenePopup = false;
+        final boolean isControlDown = ImGui.isKeyDown(GLFW.GLFW_KEY_LEFT_CONTROL) || ImGui.isKeyDown(GLFW.GLFW_KEY_RIGHT_CONTROL);
+        boolean openNewScenePopup = ImGui.isKeyDown(GLFW.GLFW_KEY_N) && isControlDown;
         boolean openRenameScenePopup = false;
         boolean openDeleteScenePopup = false;
 

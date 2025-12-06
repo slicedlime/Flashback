@@ -625,6 +625,13 @@ public class CustomImGuiImplGlfw {
             }
 
             passToImGui = !passToMinecraft;
+
+            if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL ||
+                key == GLFW_KEY_LEFT_ALT || key == GLFW_KEY_RIGHT_ALT ||
+                key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+                // Pass modifier keys to both
+                passToImGui = true;
+            }
         }
 
         if (passToMinecraft && this.prevUserCallbackKey != null && windowId == this.mainWindowPtr) {
