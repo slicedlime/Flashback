@@ -610,7 +610,7 @@ public class CustomImGuiImplGlfw {
                 passToMinecraft = true;
             } else if (ReplayUI.isMainFrameActive()) {
                 for (KeyMapping keyMapping : Minecraft.getInstance().options.keyMappings) {
-                    if (keyMapping.matches(new KeyEvent(key, scancode, 0))) {
+                    if (keyMapping.getCategory() == KeyMapping.Category.MOVEMENT && keyMapping.matches(new KeyEvent(key, scancode, 0))) {
                         passToMinecraft = true;
                         break;
                     }
